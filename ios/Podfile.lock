@@ -1854,6 +1854,8 @@ PODS:
     - React-utils (= 0.84.0)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.84.0)
+  - RNGeniusScan (1.0.0):
+    - React
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -1931,6 +1933,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios/ReactCodegen`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
+  - "RNGeniusScan (from `../node_modules/@thegrizzlylabs/react-native-genius-scan`)"
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 EXTERNAL SOURCES:
@@ -2081,6 +2084,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   ReactNativeDependencies:
     :podspec: "../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
+  RNGeniusScan:
+    :path: "../node_modules/@thegrizzlylabs/react-native-genius-scan"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -2158,8 +2163,9 @@ SPEC CHECKSUMS:
   ReactCodegen: c5e5343f6691b0cd76913b9be5e89e5a83ff3315
   ReactCommon: 92b53b0bd7f7d86154dc9f512c1ea5dee717cc72
   ReactNativeDependencies: 4a1028f79af6e29bda4d5eac9b118cc41de84687
+  RNGeniusScan: b76952792aafd5a87eb913332c036f3e638cbc77
   Yoga: 772166513f9cd2d61a6251d0dacbbfaa5b537479
 
 PODFILE CHECKSUM: 4933891e161653d7d1cd45892e6ba076048bb0d4
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
