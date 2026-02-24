@@ -12,10 +12,8 @@ import {
   ScrollView,
   ActivityIndicator,
   useColorScheme,
-  NativeModules,
 } from 'react-native';
-
-const RNGeniusScan = NativeModules.RNGeniusScan;
+import GeniusScan from '@thegrizzlylabs/react-native-genius-scan';
 
 type ScannerStatus =
   | 'idle'
@@ -45,7 +43,7 @@ export default function GeniusScanTestScreen() {
 
   const addLog = useCallback((message: string, newStatus?: ScannerStatus) => {
     const time = formatTime();
-    setLogs((prev) => [...prev, { time, message, status: newStatus }]);
+    setLogs(prev => [...prev, { time, message, status: newStatus }]);
     if (newStatus !== undefined) setStatus(newStatus);
   }, []);
 
@@ -53,16 +51,21 @@ export default function GeniusScanTestScreen() {
     setLastResult(null);
     setLastError(null);
 
-    if (!RNGeniusScan) {
-      addLog('Native module not available. Rebuild the app (e.g. pod install on iOS).', 'error');
-      setLastError('RNGeniusScan native module is null. Rebuild the app after linking.');
+    if (!GeniusScan) {
+      addLog(
+        'Native module not available. Rebuild the app (e.g. pod install on iOS).',
+        'error',
+      );
+      setLastError(
+        'RNGeniusScan native module is null. Rebuild the app after linking.',
+      );
       return;
     }
 
     addLog('Opening scanner (camera)...', 'opening');
 
     try {
-      const result = await RNGeniusScan.scanWithConfiguration({
+      const result = await GeniusScan.scanWithConfiguration({
         source: 'camera',
         multiPage: false,
       });
@@ -73,8 +76,7 @@ export default function GeniusScanTestScreen() {
           : JSON.stringify(result, null, 2).slice(0, 500),
       );
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : String(error);
+      const message = error instanceof Error ? error.message : String(error);
       const isCancelled =
         message.toLowerCase().includes('cancel') ||
         message.toLowerCase().includes('user') ||
@@ -86,6 +88,64 @@ export default function GeniusScanTestScreen() {
       setLastError(message);
     }
   }, [addLog]);
+
+  const startBarcodeScanner = useCallback(
+    async (batchMode: boolean = false) => {
+      setLastResult(null);
+      setLastError(null);
+
+      if (!GeniusScan) {
+        addLog(
+          'Native module not available. Rebuild the app (e.g. pod install on iOS).',
+          'error',
+        );
+        setLastError(
+          'RNGeniusScan native module is null. Rebuild the app after linking.',
+        );
+        return;
+      }
+
+      addLog(
+        `Opening barcode scanner (${batchMode ? 'batch' : 'standard'} mode)...`,
+        'opening',
+      );
+
+      try {
+        const result = await GeniusScan.scanReadableCodesWithConfiguration({
+          isBatchModeEnabled: batchMode,
+        });
+
+        const codes = result?.readableCodes ?? [];
+        addLog(
+          `Barcode scanner resolved – ${codes.length} code(s) detected.`,
+          'success',
+        );
+
+        if (codes.length > 0) {
+          const summary = codes
+            .map((c, i) => `${i + 1}. [${c.type}] ${c.value}`)
+            .join('\n');
+          setLastResult(summary);
+        } else {
+          setLastResult('No codes detected.');
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        const isCancelled =
+          message.toLowerCase().includes('cancel') ||
+          message.toLowerCase().includes('user') ||
+          message.toLowerCase().includes('dismiss');
+        addLog(
+          isCancelled
+            ? 'User cancelled – barcode scanner closed.'
+            : `Barcode error: ${message}`,
+          isCancelled ? 'cancelled' : 'error',
+        );
+        setLastError(message);
+      }
+    },
+    [addLog],
+  );
 
   const clearLogs = useCallback(() => {
     setLogs([]);
@@ -119,10 +179,11 @@ export default function GeniusScanTestScreen() {
         shows "Cancelled".
       </Text>
 
-      {!RNGeniusScan && (
+      {!GeniusScan && (
         <View style={[styles.warningBanner, { backgroundColor: theme.error }]}>
           <Text style={styles.warningText}>
-            Genius Scan native module not linked. Run "cd ios && pod install" then rebuild.
+            Genius Scan native module not linked. Run "cd ios && pod install"
+            then rebuild.
           </Text>
         </View>
       )}
@@ -143,10 +204,32 @@ export default function GeniusScanTestScreen() {
         )}
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: '#7209b7' },
+          status === 'opening' && styles.buttonDisabled,
+        ]}
+        onPress={() => startBarcodeScanner(false)}
+        disabled={status === 'opening'}
+      >
+        <Text style={styles.buttonText}>Scan barcode</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: '#3a0ca3' },
+          status === 'opening' && styles.buttonDisabled,
+        ]}
+        onPress={() => startBarcodeScanner(true)}
+        disabled={status === 'opening'}
+      >
+        <Text style={styles.buttonText}>Scan barcodes (batch mode)</Text>
+      </TouchableOpacity>
+
       <View style={[styles.statusCard, { backgroundColor: theme.card }]}>
-        <Text style={[styles.statusLabel, { color: theme.muted }]}>
-          Status
-        </Text>
+        <Text style={[styles.statusLabel, { color: theme.muted }]}>Status</Text>
         <Text
           style={[
             styles.statusValue,
@@ -155,10 +238,10 @@ export default function GeniusScanTestScreen() {
                 status === 'cancelled'
                   ? theme.cancelled
                   : status === 'success'
-                    ? theme.success
-                    : status === 'error'
-                      ? theme.error
-                      : theme.text,
+                  ? theme.success
+                  : status === 'error'
+                  ? theme.error
+                  : theme.text,
             },
           ]}
         >
@@ -171,7 +254,10 @@ export default function GeniusScanTestScreen() {
           <Text style={[styles.resultLabel, { color: theme.muted }]}>
             Last result
           </Text>
-          <Text style={[styles.resultText, { color: theme.text }]} numberOfLines={5}>
+          <Text
+            style={[styles.resultText, { color: theme.text }]}
+            numberOfLines={5}
+          >
             {lastResult}
           </Text>
         </View>
@@ -182,7 +268,10 @@ export default function GeniusScanTestScreen() {
           <Text style={[styles.resultLabel, { color: theme.error }]}>
             Last error / cancel
           </Text>
-          <Text style={[styles.resultText, { color: theme.text }]} numberOfLines={3}>
+          <Text
+            style={[styles.resultText, { color: theme.text }]}
+            numberOfLines={3}
+          >
             {lastError}
           </Text>
         </View>
